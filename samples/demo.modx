@@ -1,0 +1,21 @@
+MODULE DemoModule
+  ! Commento di prova: P001 e P002 non devono essere modificati qui
+  CONST string sMsg := "P002 resta una stringa";
+  CONST robtarget P003 := [[300,0,500],[1,0,0,0],[0,0,0,0],[9E9,9E9,9E9,9E9,9E9,9E9]];
+  CONST robtarget P001 := [[100,0,500],[1,0,0,0],[0,0,0,0],[9E9,9E9,9E9,9E9,9E9,9E9]];
+  CONST robtarget P004 := [[400,0,500],[1,0,0,0],[0,0,0,0],[9E9,9E9,9E9,9E9,9E9,9E9]];
+  CONST robtarget P002 := [[200,0,500],[1,0,0,0],[0,0,0,0],[9E9,9E9,9E9,9E9,9E9,9E9]];
+  PERS tooldata tGripper := [TRUE,[[0,0,0],[1,0,0,0]],[1,[0,0,0],[1,0,0,0],0,0,0]];
+  CONST robtarget P005 := [[500,0,500],[1,0,0,0],[0,0,0,0],[9E9,9E9,9E9,9E9,9E9,9E9]];
+
+  PROC main()
+    MoveJ P004, v1000, fine, tGripper;
+    PickPart;
+    MoveL P002, v500, z10, tGripper;
+  ENDPROC
+
+  PROC PickPart()
+    MoveL P003, v500, fine, tGripper;
+    MoveL P001, v300, z5, tGripper;
+  ENDPROC
+ENDMODULE

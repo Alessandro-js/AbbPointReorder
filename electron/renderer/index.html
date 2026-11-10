@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ABB Point Reorder</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">AB</div>
+        <div>
+          <h1>ABB Point Reorder</h1>
+          <p>Rinomina e riordina i robtarget RAPID senza cambiare il percorso del robot</p>
+        </div>
+      </div>
+      <div class="file-pill" id="filePill">Nessun file selezionato</div>
+    </header>
+
+    <main class="layout">
+      <aside class="panel controls">
+        <section class="control-section">
+          <h2>File e area di lavoro</h2>
+          <label for="inputPath">Programma RAPID (.modx)</label>
+          <div class="field-row">
+            <input id="inputPath" readonly placeholder="Seleziona un file .modx">
+            <button id="btnBrowseInput" class="btn secondary" type="button">Sfoglia</button>
+          </div>
+
+          <label for="outputFolder">Area di lavoro (cartella progetto)</label>
+          <div class="field-row">
+            <input id="outputFolder" readonly placeholder="Cartella dove salvare il file elaborato">
+            <button id="btnBrowseFolder" class="btn secondary" type="button">Sfoglia</button>
+          </div>
+        </section>
+
+        <section class="control-section">
+          <h2>Rinomina robtarget</h2>
+          <label class="check">
+            <input type="checkbox" id="chkRename" checked>
+            <span>Rinomina i robtarget</span>
+          </label>
+
+          <label class="check">
+            <input type="checkbox" id="chkRenameOnlyUsed" checked>
+            <span>Rinomina solo i punti utilizzati</span>
+          </label>
+
+          <label for="namingMode">Schema nomi</label>
+          <select id="namingMode">
+            <option value="auto" selected>Automatico (mantieni prefisso)</option>
+            <option value="prefix">Prefisso personalizzato</option>
+          </select>
+
+          <label for="prefix">Prefisso</label>
+          <input id="prefix" placeholder="Es. P (auto se vuoto)">
+
+          <div class="grid-2">
+            <div>
+              <label for="start">Numero iniziale</label>
+              <input id="start" type="number" min="1" step="1" value="1">
+            </div>
+            <div>
+              <label for="width">Cifre (0 = auto)</label>
+              <input id="width" type="number" min="0" step="1" value="0">
+            </div>
+          </div>
+          <p class="hint" id="prefixHint">Il prefisso viene rilevato automaticamente dal file.</p>
+        </section>
+
+        <section class="control-section">
+          <h2>Riordino</h2>
+          <label class="check">
+            <input type="checkbox" id="chkReorder" checked>
+            <span>Riordina le dichiarazioni secondo l'ordine nelle procedure</span>
+          </label>
+          <p class="hint">I robtarget vengono rinumerati per comparire in ordine crescente nelle procedure. Le coordinate e le istruzioni di movimento non vengono modificate.</p>
+        </section>
+
+        <div class="actions">
+          <button id="btnAnalyze" class="btn primary" type="button" disabled>Analizza</button>
+          <button id="btnSave" class="btn success" type="button" disabled>Salva file elaborato</button>
+        </div>
+
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+      </aside>
+
+      <section class="panel results">
+        <div id="emptyState" class="empty-state">
+          <div class="empty-icon" aria-hidden="true">RAPID</div>
+          <h2>Nessun programma caricato</h2>
+          <p>Seleziona un file <code>.modx</code> per analizzare procedure e robtarget, vedere l'anteprima delle modifiche e salvare il file elaborato.</p>
+        </div>
+
+        <div id="resultArea" hidden>
+          <div id="stats" class="stats"></div>
+
+          <div class="tabs" role="tablist" aria-label="Risultati analisi">
+            <button class="tab active" type="button" role="tab" data-tab="targets">Robtarget</button>
+            <button class="tab" type="button" role="tab" data-tab="procedures">Procedure</button>
+            <button class="tab" type="button" role="tab" data-tab="preview">Anteprima output</button>
+            <button class="tab" type="button" role="tab" data-tab="warnings">Avvisi <span id="warnCount" class="badge">0</span></button>
+          </div>
+
+          <div class="tab-panel" data-panel="targets">
+            <div class="table-toolbar">
+              <label class="check inline">
+                <input type="checkbox" id="chkShowOnlyUsed" checked>
+                <span>Mostra solo i punti utilizzati</span>
+              </label>
+              <span id="targetFilterInfo" class="hint"></span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th class="num">#</th>
+                    <th>Vecchio nome</th>
+                    <th></th>
+                    <th>Nuovo nome</th>
+                    <th class="num">Rif.</th>
+                    <th>Usato</th>
+                    <th>Scope</th>
+                    <th class="num">Riga</th>
+                  </tr>
+                </thead>
+                <tbody id="targetRows"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-panel="procedures" hidden>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Tipo</th>
+                    <th class="num">Riga</th>
+                    <th>Posizioni (nuovo ordine)</th>
+                    <th>Stato</th>
+                  </tr>
+                </thead>
+                <tbody id="procedureRows"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-panel="preview" hidden>
+            <div class="preview-toolbar">
+              <span id="previewInfo" class="hint"></span>
+              <button id="btnCopy" class="btn secondary small" type="button">Copia contenuto</button>
+            </div>
+            <pre id="preview" class="code-preview"></pre>
+          </div>
+
+          <div class="tab-panel" data-panel="warnings" hidden>
+            <ul id="warningsList" class="warnings-list"></ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
